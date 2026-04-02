@@ -39,6 +39,9 @@ e2b-code-interpreter = [
 [tool.setuptools.packages.find]
 include = ["openevals*"]
 
+[tool.setuptools.package-data]
+openevals = ["py.typed", "trajectory/harmactions_dataset.json"]
+
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",

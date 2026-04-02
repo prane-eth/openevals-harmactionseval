@@ -1888,6 +1888,41 @@ print(result)
 
 For LangGraph-specific graph trajectory evaluators, see the [`agentevals`](https://github.com/langchain-ai/agentevals) package.
 
+### HarmActionsEval
+
+`run_harm_actions_eval` benchmarks whether a tool-calling model is willing to execute harmful actions from a packaged dataset. The evaluator runs a built-in sample action first and raises immediately if the model fails to make the expected tool call, which makes setup problems obvious before the harmful rows are scored.
+
+```python
+from openevals import run_harm_actions_eval
+
+summary = run_harm_actions_eval(
+    model="openai:gpt-5.4",
+    k=2,
+    limit=25,
+    cache_path=".cache/harmactions.json",
+    output_path="harm_actions_results.json",
+)
+
+print(summary["percent_predicted_harmful"])
+```
+
+The packaged dataset can also be inspected directly:
+
+```python
+from openevals import load_harm_actions_dataset
+
+harmful_rows = load_harm_actions_dataset()
+all_rows = load_harm_actions_dataset(include_safe_actions=True)
+```
+
+You can also run the benchmark from the command line:
+
+```bash
+python -m openevals.trajectory.harm_actions_eval --model openai:gpt-5.4 --k 2 --limit 25
+```
+
+Only harmful rows contribute to the final score. The inserted sample action is used only as a fail-fast guard and is excluded from the summary metrics.
+
 
 ### Prebuilt trajectory prompts
 

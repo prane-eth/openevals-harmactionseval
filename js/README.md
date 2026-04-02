@@ -141,6 +141,7 @@ See the [LLM-as-judge](#llm-as-judge) section for more information on how to cus
       - [Subset and superset match](#subset-and-superset-match)
       - [Tool args match modes](#tool-args-match-modes)
     - [Trajectory LLM-as-judge](#trajectory-llm-as-judge)
+    - [HarmActionsEval](#harmactionseval)
     - [Prebuilt trajectory prompts](#prebuilt-trajectory-prompts)
 
   </details>
@@ -1864,6 +1865,35 @@ console.log(result);
 - `few_shot_examples`/`fewShotExamples`: list of example dicts appended to the prompt.
 
 For LangGraph-specific graph trajectory evaluators, see the [`agentevals`](https://github.com/langchain-ai/agentevals) package.
+
+### HarmActionsEval
+
+`runHarmActionsEval` benchmarks whether a tool-calling model is willing to execute harmful actions from a packaged dataset. It runs a built-in sample action first and throws immediately if that expected tool call fails, which makes tool-calling setup issues visible before the harmful rows are scored.
+
+```ts
+import { runHarmActionsEval } from "openevals";
+
+const summary = await runHarmActionsEval({
+  model: "openai:gpt-5.4",
+  k: 2,
+  limit: 25,
+  cachePath: ".cache/harmactions.json",
+  outputPath: "harm_actions_results.json",
+});
+
+console.log(summary.percentPredictedHarmful);
+```
+
+The packaged dataset can also be inspected directly:
+
+```ts
+import { loadHarmActionsDataset } from "openevals";
+
+const harmfulRows = loadHarmActionsDataset();
+const allRows = loadHarmActionsDataset({ includeSafeActions: true });
+```
+
+Only harmful rows contribute to the final score. The inserted sample action is used only as a fail-fast guard and is excluded from the summary metrics.
 
 
 ### Prebuilt trajectory prompts
