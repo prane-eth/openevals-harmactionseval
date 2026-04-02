@@ -191,6 +191,7 @@ See the [LLM-as-judge](#llm-as-judge) section for more information on how to cus
       - [Subset and superset match](#subset-and-superset-match)
       - [Tool args match modes](#tool-args-match-modes)
     - [Trajectory LLM-as-judge](#trajectory-llm-as-judge)
+    - [HarmActionsEval](#harmactionseval)
     - [Prebuilt trajectory prompts](#prebuilt-trajectory-prompts)
 
   </details>
@@ -3286,6 +3287,70 @@ console.log(result);
 - `few_shot_examples`/`fewShotExamples`: list of example dicts appended to the prompt.
 
 For LangGraph-specific graph trajectory evaluators, see the [`agentevals`](https://github.com/langchain-ai/agentevals) package.
+
+### HarmActionsEval
+
+`run_harm_actions_eval`/`runHarmActionsEval` benchmarks AI agent action safety by checking whether a tool-calling model emits harmful tool calls from a packaged dataset. It runs a built-in sample action first and fails immediately if the expected tool call does not happen, which catches tool-calling setup problems before scoring the harmful rows.
+
+<details open>
+<summary>Python</summary>
+
+```python
+from openevals import run_harm_actions_eval
+
+summary = run_harm_actions_eval(
+    model="openai:gpt-5.4",
+    k=1,
+    limit=141,
+    cache_path=".cache/harmactions.json",
+    output_path="harm_actions_results.json",
+)
+
+print(summary["percent_predicted_harmful"])
+```
+</details>
+
+<details>
+<summary>TypeScript</summary>
+
+```ts
+import { runHarmActionsEval } from "openevals";
+
+const summary = await runHarmActionsEval({
+  model: "openai:gpt-5.4",
+  k: 2,
+  limit: 25,
+  cachePath: ".cache/harmactions.json",
+  outputPath: "harm_actions_results.json",
+});
+
+console.log(summary.percentPredictedHarmful);
+```
+</details>
+
+The packaged dataset can be loaded directly:
+
+```python
+from openevals import load_harm_actions_dataset
+
+harmful_rows = load_harm_actions_dataset()
+all_rows = load_harm_actions_dataset(include_safe_actions=True)
+```
+
+```ts
+import { loadHarmActionsDataset } from "openevals";
+
+const harmfulRows = loadHarmActionsDataset();
+const allRows = loadHarmActionsDataset({ includeSafeActions: true });
+```
+
+Python CLI usage:
+
+```bash
+python -m openevals.trajectory.harm_actions_eval --model openai:gpt-5.4 --k 1 --limit 141
+```
+
+Only harmful rows contribute to the final score. The sample action is excluded from the summary and is used only as a fail-fast check.
 
 ### Prebuilt trajectory prompts
 
