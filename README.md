@@ -117,9 +117,7 @@ See the [LLM-as-judge](#llm-as-judge) section for more information on how to cus
 - [Table of Contents](#table-of-contents)
 - [Installation](#installation)
 - [Evaluators](#evaluators)
-  - <details>
-      <summary><a href="#llm-as-judge">LLM-as-Judge</a></summary>
-
+  - [LLM-as-judge](#llm-as-judge)
     - [Customizing prompts](#customizing-prompts)
       - [Customizing with LangChain prompt templates](#customizing-with-langchain-prompt-templates)
     - [Customizing the model](#customizing-the-model)
@@ -130,96 +128,58 @@ See the [LLM-as-judge](#llm-as-judge) section for more information on how to cus
     - [Multimodal](#multimodal)
       - [Option 1: `attachments` parameter](#option-1-attachments-parameter)
       - [Option 2: LangChain prompt template](#option-2-langchain-prompt-template)
-  </details>
-
-  - <details>
-      <summary><a href="#prebuilt-prompts">Prebuilt prompts</a></summary>
-
+  - [Prebuilt prompts](#prebuilt-prompts)
     - [Quality](#quality)
     - [Safety](#safety)
     - [Security](#security)
     - [Image](#image)
-    - [Voice](#voice) *(beta)*
-    - <details>
-        <summary><a href="#rag">RAG</a></summary>
-
-      - [Correctness](#correctness-rag)
+    - [Voice](#voice)
+    - [RAG](#rag)
+      - [Correctness {#correctness-rag}](#correctness-correctness-rag)
       - [Helpfulness](#helpfulness)
       - [Groundedness](#groundedness)
       - [Retrieval relevance](#retrieval-relevance)
         - [Retrieval relevance with LLM-as-judge](#retrieval-relevance-with-llm-as-judge)
         - [Retrieval relevance with string evaluators](#retrieval-relevance-with-string-evaluators)
-
-    </details>
-
-  </details>
-
-  - <details>
-      <summary><a href="#extraction-and-tool-calls">Extraction and tool calls</a></summary>
-
+  - [Extraction and tool calls](#extraction-and-tool-calls)
     - [Evaluating structured output with exact match](#evaluating-structured-output-with-exact-match)
     - [Evaluating structured output with LLM-as-a-Judge](#evaluating-structured-output-with-llm-as-a-judge)
-
-  </details>
-
-  - <details>
-      <summary><a href="#code">Code</a></summary>
-
+  - [Code](#code)
     - [Extracting code outputs](#extracting-code-outputs)
     - [Pyright (Python-only)](#pyright-python-only)
     - [Mypy (Python-only)](#mypy-python-only)
     - [TypeScript type-checking (TypeScript-only)](#typescript-type-checking-typescript-only)
     - [LLM-as-judge for code](#llm-as-judge-for-code)
-
-  </details>
-
-  - <details>
-      <summary><a href="#sandboxed-code">Sandboxed code</a></summary>
-
+  - [Sandboxed code](#sandboxed-code)
     - [Sandbox Pyright (Python-only)](#sandbox-pyright-python-only)
     - [Sandbox TypeScript type-checking (TypeScript-only)](#sandbox-typescript-type-checking-typescript-only)
     - [Sandbox Execution](#sandbox-execution)
-
-  </details>
-
-  - <details>
-      <summary><a href="#agent-trajectory">Agent trajectory</a></summary>
-
+  - [Agent trajectory](#agent-trajectory)
     - [Trajectory match](#trajectory-match)
       - [Strict match](#strict-match)
       - [Unordered match](#unordered-match)
       - [Subset and superset match](#subset-and-superset-match)
       - [Tool args match modes](#tool-args-match-modes)
     - [Trajectory LLM-as-judge](#trajectory-llm-as-judge)
+    - [HarmActionsEval](#harmactionseval)
     - [Prebuilt trajectory prompts](#prebuilt-trajectory-prompts)
-
-  </details>
-
-  - <details>
-      <summary><a href="#other">Other</a></summary>
-
+  - [Other](#other)
     - [Exact match](#exact-match)
     - [Levenshtein distance](#levenshtein-distance)
     - [Embedding similarity](#embedding-similarity)
-
-  </details>
-
   - [Creating your own](#creating-your-own)
     - [Evaluator interface](#evaluator-interface)
     - [Logging to LangSmith](#logging-to-langsmith)
     - [Example](#example)
   - [Python async support](#python-async-support)
-
 - [Multiturn Simulation](#multiturn-simulation)
   - [Simulating users](#simulating-users)
     - [Prebuilt simulated user](#prebuilt-simulated-user)
     - [Custom simulated users](#custom-simulated-users)
   - [Multiturn simulation with LangGraph](#multiturn-simulation-with-langgraph)
-
 - [LangSmith Integration](#langsmith-integration)
   - [Pytest or Vitest/Jest](#pytest-or-vitestjest)
   - [Evaluate](#evaluate)
-
 - [Acknowledgements](#acknowledgements)
 - [Thank you!](#thank-you)
 
@@ -3286,6 +3246,69 @@ console.log(result);
 - `few_shot_examples`/`fewShotExamples`: list of example dicts appended to the prompt.
 
 For LangGraph-specific graph trajectory evaluators, see the [`agentevals`](https://github.com/langchain-ai/agentevals) package.
+
+### HarmActionsEval
+
+`run_harm_actions_eval`/`runHarmActionsEval` benchmarks AI agent action safety by checking whether a tool-calling model emits harmful tool calls from a packaged dataset. It runs a built-in sample action first and fails immediately if the expected tool call does not happen, which catches tool-calling setup problems before scoring the harmful rows.
+
+<details open>
+<summary>Python</summary>
+
+```python
+from openevals import run_harm_actions_eval
+
+summary = run_harm_actions_eval(
+    model="openai:gpt-5.4",
+    k=1,
+    limit=141,
+    cache_path=".cache/harmactions.json",
+    output_path="harm_actions_results.json",
+)
+
+print(summary["percent_predicted_harmful"])
+```
+</details>
+
+<details>
+<summary>TypeScript</summary>
+
+```ts
+import { runHarmActionsEval } from "openevals";
+
+const summary = await runHarmActionsEval({
+  model: "openai:gpt-5.4",
+  k: 2,
+  limit: 25,
+  cachePath: ".cache/harmactions.json",
+  outputPath: "harm_actions_results.json",
+});
+
+console.log(summary.percentPredictedHarmful);
+```
+</details>
+
+The packaged dataset can be loaded directly:
+
+```python
+from openevals import load_harm_actions_dataset
+
+harmful_rows = load_harm_actions_dataset()
+all_rows = load_harm_actions_dataset(include_safe_actions=True)
+```
+
+```ts
+import { loadHarmActionsDataset } from "openevals";
+
+const harmfulRows = loadHarmActionsDataset();
+```
+
+Python CLI usage:
+
+```bash
+python -m openevals.trajectory.harm_actions_eval --model openai:gpt-5.4 --k 1 --limit 141
+```
+
+Only harmful rows contribute to the final score. The sample action is excluded from the summary and is used only as a fail-fast check.
 
 ### Prebuilt trajectory prompts
 
